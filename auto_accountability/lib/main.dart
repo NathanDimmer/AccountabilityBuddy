@@ -3,7 +3,7 @@ import 'package:flutter/rendering.dart';
 
 void main() => runApp(MyApp());
 
-Map<String,List<Map<String,String>>> deviceStorage = {
+Map<String, List<Map<String, String>>> deviceStorage = {
   'current': [
     {
       'title': 'Goal 1',
@@ -42,20 +42,22 @@ Map<String,List<Map<String,String>>> deviceStorage = {
       'key': '5'
     },
   ],
-  'past': [{
+  'past': [
+    {
       'title': 'Goal 5',
       'description': 'This is the description of Goal 5',
       'time': '6/15/2020 11:00 PM',
       'reflection': '',
       'key': '5'
-    },]
+    },
+  ]
 };
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Auto Accountability',
+      title: 'Acountability Buddy',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -72,42 +74,54 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Map<String, String>> currentList = deviceStorage['current'] as List<Map<String, String>>;
-  List<Map<String, String>> pastList = deviceStorage['past'] as List<Map<String, String>>;
+  List<Map<String, String>> currentList = deviceStorage['current'];
+  List<Map<String, String>> pastList = deviceStorage['past'];
 
   void addGoal(Map content) {
-    currentList.add(content);
+    setState(() {
+      currentList.add(content);
+    });
   }
 
   void currentToPast(Map itemObject) {
-    currentList.remove(itemObject);
-    pastList.add(itemObject);
+    setState(() {
+      currentList.remove(itemObject);
+      pastList.add(itemObject);
+    });
   }
 
   void pastToCurrent(Map itemObject) {
-    currentList.add(itemObject);
-    pastList.remove(itemObject);
+    setState(() {
+      currentList.add(itemObject);
+      pastList.remove(itemObject);
+    });
   }
 
   void delete(Map itemObject) {
-    pastList.remove(itemObject);
+    setState(() {
+      pastList.remove(itemObject);
+    });
   }
 
   void reorderPast(int index1, int index2, Map orgIndex1) {
-    pastList.insert(index2, orgIndex1);
-    pastList.removeAt(index1);
+    setState(() {
+      pastList.insert(index2, orgIndex1);
+      pastList.removeAt(index1);
+    });
   }
 
   void reorderCurrent(int index1, int index2, Map orgIndex1) {
-    currentList.insert(index2, orgIndex1);
-    currentList.removeAt(index1);
+    setState(() {
+      currentList.insert(index2, orgIndex1);
+      currentList.removeAt(index1);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Auto Accountability"),
+        title: Text("Accountability Buddy"),
       ),
       body: PageView(
         children: <Widget>[
@@ -129,8 +143,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (BuildContext context) => NewGoal()));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (BuildContext context) => NewGoal(
+                        addGoal: addGoal,
+                      )));
         },
         tooltip: 'New goal',
         child: Icon(Icons.add),
@@ -271,6 +289,9 @@ class CurrentPage extends StatelessWidget {
                                       print('Phone number entered');
                                       Navigator.of(context).pop();
                                     },
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18.0),
+                                    ),
                                     child: Text('Send'),
                                     color: Colors.blue[500],
                                     textColor: Colors.white,
@@ -433,6 +454,10 @@ class PastPage extends StatelessWidget {
   }
 }
 
+final TextEditingController titleController = new TextEditingController();
+final TextEditingController descriptionController = new TextEditingController();
+final TextEditingController timeController = new TextEditingController();
+
 class NewGoal extends StatelessWidget {
   final Function addGoal;
 
@@ -445,16 +470,77 @@ class NewGoal extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            addGoal({
-              'title': 'Added Goal',
-              'description': 'This is the description of the added goal',
-              'time': '6/17/2020 11:00 PM',
-              'reflection': '',
-            });
             Navigator.pop(context);
+            titleController.clear();
+            descriptionController.clear();
+            timeController.clear();
           },
         ),
         title: Text('Add a new goal'),
+      ),
+      body: Container(
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: titleController,
+              decoration: InputDecoration(labelText: 'Goal name'),
+              keyboardType: TextInputType.text,
+            ),
+            SizedBox(
+              height: 30,
+            ),
+            TextField(
+              controller: descriptionController,
+              decoration: InputDecoration(labelText: 'Goal description'),
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+            ),
+            SizedBox(
+              height: 30,
+            ),
+            TextField(
+              controller: timeController,
+              decoration: InputDecoration(labelText: 'End time'),
+              keyboardType: TextInputType.datetime,
+            ),
+            SizedBox(
+              height: 30,
+            ),
+            ButtonBar(
+              children: <Widget>[
+                FlatButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      titleController.clear();
+                      descriptionController.clear();
+                      timeController.clear();
+                    },
+                    child: Text('Cancel')),
+                RaisedButton(
+                  onPressed: () {
+                    addGoal({
+                      'title': titleController.text,
+                      'description': descriptionController.text,
+                      'time': timeController.text,
+                      'reflection': '',
+                    });
+                    Navigator.pop(context);
+                    titleController.clear();
+                    descriptionController.clear();
+                    timeController.clear();
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  child: Text('Submit'),
+                  color: Colors.blue[500],
+                  textColor: Colors.white,
+                )
+              ],
+            )
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(15, 15, 15, 0),
       ),
     ));
   }
