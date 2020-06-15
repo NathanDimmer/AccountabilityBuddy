@@ -1,51 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(MyApp());
 
 Map<String, List<Map<String, String>>> deviceStorage = {
   'current': [
     {
-      'title': 'Goal 1',
+      'title': 'Create Flutter App',
       'description':
-          'This is the description of Goal 1. This is the description of Goal 1.',
-      'time': '6/11/2020 7:00 PM',
+          'Create the boilerplate Flutter App using Flutter Doctor.',
+      'time': '6/13/2020 12:00 PM',
       'reflection': '',
       'key': '1'
     },
     {
-      'title': 'Goal 2',
-      'description': 'This is the description of Goal 2',
-      'time': '6/13/2020 9:00 AM',
+      'title': 'Implement Swipe to Complete',
+      'description': 'Allow goals to be completed based on gestures',
+      'time': '6/13/2020 6:00 PM',
       'reflection': '',
       'key': '2'
     },
     {
-      'title': 'Goal 3',
-      'description': 'This is the description of Goal 3',
-      'time': '6/15/2020 11:00 PM',
+      'title': 'Implement echoAR veiwer',
+      'description': 'Add echoAR to allow viewing of your virtual buddies',
+      'time': '6/15/2020 3:00 AM',
       'reflection': '',
       'key': '3'
     },
     {
-      'title': 'Goal 4',
-      'description': 'This is the description of Goal 4',
-      'time': '6/15/2020 11:00 PM',
+      'title': 'Implement scoring',
+      'description': 'Add gamificiation to unlock buddies',
+      'time': '6/15/2020 3:00 AM',
       'reflection': '',
-      'key': '4'
+      'key': '5'
     },
     {
-      'title': 'Goal 5',
-      'description': 'This is the description of Goal 5',
-      'time': '6/15/2020 11:00 PM',
+      'title': 'Finish Hackathon Demo',
+      'description': 'Record hackathon demo video',
+      'time': '6/15/2020 3:00 AM',
       'reflection': '',
       'key': '5'
     },
   ],
   'past': [
     {
-      'title': 'Goal 5',
-      'description': 'This is the description of Goal 5',
+      'title': 'Register for Geom Hacks',
+      'description': 'Register on Devpost for Geom Hacks',
       'time': '6/15/2020 11:00 PM',
       'reflection': '',
       'key': '5'
@@ -76,6 +77,27 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, String>> currentList = deviceStorage['current'];
   List<Map<String, String>> pastList = deviceStorage['past'];
+
+  int score = 0;
+
+  double isOpacity = .25;
+
+  void addScore() {
+    setState(() {
+      score++;
+    });
+    if (score >= 5) {
+      setState(() {
+        isOpacity = 1;
+      });
+    }
+  }
+
+  void resetScore() {
+    setState(() {
+      score = 0;
+    });
+  }
 
   void addGoal(Map content) {
     setState(() {
@@ -121,7 +143,28 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Accountability Buddy"),
+        title: Text(
+          "Accountability Buddy",
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(
+              Icons.favorite,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (BuildContext context) => Buddies(
+                            score: score,
+                            isBuddy: isOpacity,
+                          )));
+            },
+            visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+          )
+        ],
       ),
       body: PageView(
         children: <Widget>[
@@ -130,6 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
             currentList: currentList,
             currentToPast: currentToPast,
             reorderCurrent: reorderCurrent,
+            addScore: addScore,
           ),
           PastPage(
             pastList: pastList,
@@ -216,12 +260,14 @@ class CurrentPage extends StatelessWidget {
 
   final Function currentToPast;
   final Function reorderCurrent;
+  final Function addScore;
 
   CurrentPage(
       {this.pastList,
       this.currentList,
       this.currentToPast,
-      this.reorderCurrent});
+      this.reorderCurrent,
+      this.addScore});
 
   @override
   Widget build(BuildContext context) {
@@ -329,6 +375,13 @@ class CurrentPage extends StatelessWidget {
           onDismissed: (direction) {
             if (direction == DismissDirection.startToEnd) {
               currentToPast(itemsObject);
+              addScore();
+              Scaffold.of(context).showSnackBar(SnackBar(
+                content: Text('Goal Complete! +1 Score'),
+                duration: Duration(seconds: 1, milliseconds: 50),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ));
             } else {
               currentToPast(itemsObject);
             }
@@ -543,5 +596,94 @@ class NewGoal extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(15, 15, 15, 0),
       ),
     ));
+  }
+}
+
+class Buddies extends StatelessWidget {
+  final int score;
+  final double isBuddy;
+
+  Buddies({this.score, this.isBuddy});
+
+  @override
+  Widget build(BuildContext context) {
+    return (Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+          title: Text('Your Accountability Buddies'),
+        ),
+        body: Column(children: <Widget>[
+          Container(
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    child: AspectRatio(
+                      child: CircularProgressIndicator(
+                        value: (score / 5),
+                        backgroundColor: Colors.grey[200],
+                        strokeWidth: 25,
+                      ),
+                      aspectRatio: 1,
+                    ),
+                    padding: EdgeInsets.fromLTRB(75, 30, 75, 30),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Center(
+            child: Text(
+              'Buddies:',
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
+          Expanded(
+              child: GridView.count(
+            children: <Widget>[
+              InkWell(child: Opacity(
+                child: GridTile(child: Image.asset('assets/arctic fox.png')),
+                opacity: isBuddy,
+              ), onTap: () {
+                _launchURL();
+              },),
+              Opacity(
+                child: GridTile(child: Image.asset('assets/cat.png')),
+                opacity: .25,
+              ),
+              Opacity(
+                child: GridTile(child: Image.asset('assets/dog.png')),
+                opacity: .25,
+              ),
+              Opacity(
+                child: GridTile(child: Image.asset('assets/eagle.png')),
+                opacity: .25,
+              ),
+              Opacity(
+                child: GridTile(child: Image.asset('assets/fox.png')),
+                opacity: .25,
+              ),
+              Opacity(
+                child: GridTile(child: Image.asset('assets/rat.png')),
+                opacity: .25,
+              ),
+            ],
+            crossAxisCount: 3,
+          ))
+        ])));
+  }
+}
+
+_launchURL({forceWebView: true, enableJavaScript: true}) async {
+  const url = 'https://console.echoAR.xyz/webxr?key=lingering-bird-2378';
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
   }
 }
